@@ -7,6 +7,14 @@ import doodle.jvm.DoodlePanel
 
 object UI {
 
+  /* *
+   * Generic functions to build images from doodle lib.
+   * */
+
+  trait Show[-A] {
+    def image(a: A): Image
+  }
+
   def layout(op: (Image, Image) => Image, image: Int => Image, n: Int): Image = {
     if(n == 1) image(n)
     else op(image(n), layout(op, image, n-1))
@@ -24,9 +32,13 @@ object UI {
     frame.setVisible(true)
   }
 
+  /* *
+  * Game of Life
+  * */
+
   def buildPlateau(world: World): Image = {
     val cellDead = Rectangle(world.worldSize, world.worldSize)
-    val cellAlive = Rectangle(world.worldSize, world.worldSize).fillColor(Color.black)
+    val cellAlive = Rectangle(world.worldSize, world.worldSize).fillColor(Color.darkCyan)
 
     def lineImage(y: Int): Image = {
       layout((img1, img2) => img1 beside img2, x => if(world.isCellAlive(Coordinates(x, y))) cellAlive else cellDead, world.worldSize)
@@ -35,4 +47,12 @@ object UI {
     val lines = layout((img1, img2) => img1 above img2, y => lineImage(y), world.worldSize)
     lines
   }
+
+  implicit val worldShow = new Show[World] {
+    override def image(a: World): Image =
+      buildPlateau(a)
+  }
+
+  def images(as: Events[World])(implicit show: Show[World]): Events[Image] =
+    as.map(w => show.image(w))
 }
